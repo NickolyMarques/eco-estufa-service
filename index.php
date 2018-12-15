@@ -7,9 +7,19 @@
     $app = new \Slim\Slim();
 	$db = new Db;
 	//root para galeria //
-	$diretorioroot = "..\\galeria\\";
+	$diretorioroot = "../galeria/";
 
-	// login
+	//root para banner //
+	$directoriobanner = "../eventos/active/";
+
+
+	
+	/******************************************************************
+	 Secao: Admin ***************************************************
+	Metodo: login
+	Descricao: loga ao usuario *********************************
+	OBS: @TODO *************************************************/
+	/*************************************************************** */
     $app->post("/login", function() use($app, $db){
         $response = array();
         
@@ -35,7 +45,76 @@
         
     });
 	
-	/**SECAO DE GALERIA */
+	
+	/******************************************************************
+	 Secao: Banner ***************************************************
+	Metodo: recuperaBanner
+	Descricao: recupera o banner marcado como ativo (o ubicado na pasta ativo)
+	*******************************************************************/
+	/*************************************************************** */
+	$app->post("/mostrabanner", function() use($app,$db,$directoriobanner){
+		
+		$response = array();
+		$banner=array();
+		$response['erro'] = true;
+		$response['banner'] = '';
+		try{
+			$fileSystemIterator = new FilesystemIterator($directoriobanner,FilesystemIterator::UNIX_PATHS);
+			$entries = array();
+			foreach ($fileSystemIterator as $fileInfo){
+				list($width, $height)=getimagesize($directoriobanner.$fileInfo->getFilename());
+				$response['erro'] = false;
+				$response['banner'] = $fileInfo->getFilename();
+				$response['width'] = $width;
+				$response['height'] = $height; 
+				break;
+			}
+		}catch(UnexpectedValueException $e){
+			$response['erro'] = true;
+			$response['banner'] = '';
+			
+		}
+		response(200, $response,null);
+
+	});
+
+	/******************************************************************
+	 Secao: CARUSEL ***************************************************
+	Metodo: listarcarusel
+	Descricao: lista os items que tem na BBDD em banner ativos
+	ordenados por id e limitado a 5 */
+	/*************************************************************** */
+
+	$app->post("/listarcarousel", function() use($app, $db){
+        $response = array();
+        $carousel = array();   
+        $ue = $db->query(sprintf("SELECT * FROM banner WHERE ativo='S' ORDER BY id_banner desc LIMIT 5"));
+      
+        while($dados = $ue->fetch_assoc()) {
+
+            $carousel['erro'] = false;
+            $carousel['titulo'] = $dados["titulo"];
+            $carousel['imagem'] = $dados["banner"];
+			$carousel['descricao'] = $dados["descricao"];
+			$carousel['link'] = $dados["link"];
+            array_push ( $response,$carousel);
+        }
+        if($ue->num_rows == 0){
+        
+            $response['erro'] = true;
+            $response['produto'] = "Não existem productos";
+
+			}
+        response(200, $response,"carousel");
+        
+    });
+	/******************************************************************
+	 Secao: GALERIA ***************************************************
+	Metodo: listargaleria
+	Descricao: lista os items que tem na BBDD em galeria ativos
+	e para cada diretorio retorna a primeira imagem e suas dimencoes */
+	/*************************************************************** */
+
 	$app->post("/listagaleria", function() use($app,$db,$diretorioroot){
 		$response = array();
 		$galeria = array();
@@ -53,7 +132,7 @@
 					$fileSystemIterator = new FilesystemIterator($diretorioroot.$dados["diretorio"]);
 					$entries = array();
 					foreach ($fileSystemIterator as $fileInfo){	
-						list($width, $height)=getimagesize($diretorioroot.$dados["diretorio"]."\\".$fileInfo->getFilename());
+						list($width, $height)=getimagesize($diretorioroot.$dados["diretorio"]."/".$fileInfo->getFilename());
 						$galeria['imagemPrincipal'] = $fileInfo->getFilename();
 						$galeria['width'] = $width;
 						$galeria['height'] = $height; 
@@ -70,19 +149,23 @@
 		 
 		 
 	});
+	
+	/******************************************************************
+	 Secao: GALERIA ***************************************************
+	Metodo: imagemdirectorio
+	Descricao: Para cada diretorio lista as imagems e suas dimencoes */
+	/*************************************************************** */
 	$app->post("/imagemdirectorio", function() use($app,$diretorioroot){
 		$response = array();
 		$galeria = array();
 		$diretorio  = $app->request->post("diretorio");
 		$diretorio = isset($diretorio)?$diretorio:"diretoriovacio";
-		//$diretorio = isset($app->request->post("diretorio"))?$app->request->post("diretorio"):"diretoriovacio";
 					
-		/** retornamos a primeira imagem do diretorio**/
 		try{
 			$fileSystemIterator = new FilesystemIterator($diretorioroot.$diretorio);
 			$entries = array();
 			foreach ($fileSystemIterator as $fileInfo){
-				list($width, $height)=getimagesize($diretorioroot.$diretorio."\\".$fileInfo->getFilename());
+				list($width, $height)=getimagesize($diretorioroot.$diretorio."/".$fileInfo->getFilename());
 				$galeria['erro'] = false;
 				$galeria['imagem'] = $fileInfo->getFilename();
 				$galeria['width'] = $width;
@@ -100,10 +183,17 @@
 		 
 	});
 
-
-
-	/**FIM DE SECAO DE GALERIA */
-	/****SECAO DE PRODUTOS***/
+	
+	
+	
+	
+	/******************************************************************
+	 Secao: PRODUTOS ***************************************************
+	Metodo: listarprodutos
+	Descricao: lista os produtos recuperados da BBDD marcados como ativos,
+	recupera de 5 em 5 para paginacao */
+	/*************************************************************** */
+	
 	//lista de 5 em 5 os produtos
     $app->post("/listarproduto", function() use($app, $db){
         $response = array();
@@ -131,7 +221,13 @@
         response(200, $response,"produtos");
         
     });
-	//retorna o numero de paginas dos produtos
+	
+	/******************************************************************
+	 Secao: PRODUTOS ***************************************************
+	Metodo: paginasprodutos
+	Descricao: recupera quantas paginas temos de proodutos
+	OBS: Nao eh usada****************************************************/
+	/*************************************************************** */
     $app->post("/paginasprodutos", function() use($app, $db){
 
         $response = array();
@@ -146,7 +242,13 @@
             response(200, $response,null);
 
     });
-	//retorna o numero de elementos dos produtos
+	
+		
+	/******************************************************************
+	 Secao: PRODUTOS ***************************************************
+	Metodo: paginasprodutos
+	Descricao: recupera o numero de produtos **************************/
+	/*************************************************************** */
 	$app->post("/contarprodutos", function() use($app, $db){
 
         $response = array();
@@ -160,10 +262,15 @@
         }
             response(200, $response,null);
 
-    });
-	/***FIM DE SECAO DE PRODUTOS***/
-	
-	/**ENVIO DE EMAIL**/
+	});
+		
+	/******************************************************************
+	 Secao: EMAIL ***************************************************
+	Metodo: contato
+	Descricao: envia por email para os formularios de contato e orcamento
+	segundo o parametro metodo que vai na request *********************/
+	/*************************************************************** */
+
 		$app->post("/contato", function() use($app){
 			$response = array();
 			$retorno = createEmail($app);
@@ -176,10 +283,7 @@
 			response(200, $response,null);
 
 	    });
-	
-	/**FIM DE ENVIO DE EMAIL**/
-	
-	
+
 	
     function response($status_code, $response,$arrayName){
         $app = \Slim\Slim::getInstance();
@@ -188,6 +292,8 @@
         $formatResponse = isset($arrayName)?json_encode(array($arrayName => $response)):json_encode($response);
 		echo $formatResponse;
     }
+
+
 
 	function createEmail($app){
 		$retorno = false;
@@ -231,7 +337,7 @@
 			$finalidade = $app->request->post("finalidade");
 			$largura = $app->request->post("largura");
 			$comprimento = $app->request->post("comprimento");
-			$alturalateral = $app->request->post("alturaLateral");
+			$alturaLateral = $app->request->post("alturaLateral");
 
 			/* Montando a mensagem a ser enviada no corpo do e-mail. */
 			$mensagemHTML = '<P>Nome: '.$nomeremetente.'.<br></P>
