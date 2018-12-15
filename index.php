@@ -5,7 +5,9 @@
 
     \Slim\Slim::registerAutoloader();
     $app = new \Slim\Slim();
-    $db = new Db;
+	$db = new Db;
+	//root para galeria //
+	$diretorioroot = "..\\galeria\\";
 
 	// login
     $app->post("/login", function() use($app, $db){
@@ -33,10 +35,10 @@
         
     });
 	
-	$app->post("/listagaleria", function() use($app,$db){
+	/**SECAO DE GALERIA */
+	$app->post("/listagaleria", function() use($app,$db,$diretorioroot){
 		$response = array();
 		$galeria = array();
-		//$ue = $db->query(sprintf("SELECT COUNT(*) as numelem FROM produto WHERE ativo ='S'"));
 		 $ue = $db->query(sprintf("SELECT * FROM galeria WHERE ativo='S'"));
 			if($ue->num_rows > 0)
 			{ 
@@ -47,6 +49,14 @@
 					$galeria['galeria'] = $dados["galeria"];
 					$galeria['descricao'] = $dados["descricao"];
 					$galeria['diretorio'] = $dados["diretorio"];
+					/** retornamos a primeira imagem do diretorio**/
+					$fileSystemIterator = new FilesystemIterator($diretorioroot.$dados["diretorio"]);
+					$entries = array();
+					foreach ($fileSystemIterator as $fileInfo){
+						$galeria['imagemPrincipal'] = $fileInfo->getFilename();
+						break;
+					}
+					
 					array_push ( $response,$galeria);
 				}
 			}else{
@@ -57,6 +67,37 @@
 		 
 		 
 	});
+	$app->post("/imagemdirectorio", function() use($app,$diretorioroot){
+		$response = array();
+		$galeria = array();
+		$diretorio  = $app->request->post("diretorio");
+		$diretorio = isset($diretorio)?$diretorio:"diretoriovacio";
+		//$diretorio = isset($app->request->post("diretorio"))?$app->request->post("diretorio"):"diretoriovacio";
+					
+		/** retornamos a primeira imagem do diretorio**/
+		try{
+			$fileSystemIterator = new FilesystemIterator($diretorioroot.$diretorio);
+			$entries = array();
+			$fileSystemIterator->size
+			foreach ($fileSystemIterator as $fileInfo){
+				$galeria['erro'] = false;
+				$galeria['imagemPrincipal'] = $fileInfo->getFilename();
+				array_push ( $response,$galeria);
+			}
+		}catch(UnexpectedValueException $e){
+			$galeria['erro'] = true;
+			$galeria['imagemPrincipal'] = '';
+			array_push ( $response,$galeria);
+		}
+
+        response(200, $response,"listaImagems");
+		 
+		 
+	});
+
+
+
+	/**FIM DE SECAO DE GALERIA */
 	/****SECAO DE PRODUTOS***/
 	//lista de 5 em 5 os produtos
     $app->post("/listarproduto", function() use($app, $db){
