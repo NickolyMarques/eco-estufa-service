@@ -78,7 +78,7 @@
 		try{
 			$fileSystemIterator = new FilesystemIterator($diretorioroot.$diretorio);
 			$entries = array();
-			$fileSystemIterator->size
+			$fileSystemIterator->size;
 			foreach ($fileSystemIterator as $fileInfo){
 				$galeria['erro'] = false;
 				$galeria['imagemPrincipal'] = $fileInfo->getFilename();
@@ -158,36 +158,94 @@
     });
 	/***FIM DE SECAO DE PRODUTOS***/
 	
-	/**SECAO DE CONTATO**/
-		
-		$app->post("/contato", function() use($app, $db){
-		
-		
-		$response = array();
-		$form = array();
-		
-		
+	/**ENVIO DE EMAIL**/
+		$app->post("/contato", function() use($app){
+			$response = array();
+			$retorno = createEmail($app);
+			// se a mensagem foi enviada com sucesso
+			if ($retorno){
+				$response['erro']=false;
+			}else{
+				$response['erro']=true;
+			}
+			response(200, $response,null);
+
+	    });
+	
+	/**FIM DE ENVIO DE EMAIL**/
+	
+	
+	
+    function response($status_code, $response,$arrayName){
+        $app = \Slim\Slim::getInstance();
+        $app->status($status_code);
+        $app->contentType("application/json");
+        $formatResponse = isset($arrayName)?json_encode(array($arrayName => $response)):json_encode($response);
+		echo $formatResponse;
+    }
+
+	function createEmail($app){
+		$retorno = false;
 		//$emailsender='contato@ecoestufas.com.br';
 		$emailsender = "juanpablomonterohidalgo@gmail.com";
+		//$emailremetente    = "contato@ecoestufas.com.br";
+		$emailremetente    = "juanpablomonterohidalgo@gmail.com";
+		$mensagemHTML = "";
 		/* Verifica qual e o sistema operacional do servidor para ajustar o cabecalho de forma correta.  */
 		if(PATH_SEPARATOR == ";") $quebra_linha = "\r\n"; //Se for Windows
 		else $quebra_linha = "\n"; //Se "nao for Windows"
-		$nomeremetente = $app->request->post("nome");
-		$telefone = $app->request->post("telefone");
-		$email = $app->request->post("email");
-		$mensagem = $app->request->post("comentarios");
-		$assunto = "Contato ecoestufas";
-        //$emailremetente    = "contato@ecoestufas.com.br";
-		$emailremetente    = "juanpablomonterohidalgo@gmail.com";
-		/* Montando a mensagem a ser enviada no corpo do e-mail. */
-		$mensagemHTML = '<P>Nome: '.$nomeremetente.'.<br></P>
-		<P>Email para resposta: '.$email.'.<br></P>
-		<P>Telefone para contato: '.$telefone.'.<br></P>
-		<p>Mensagem: <b><i>'.$mensagem.'</i></b></p>
-		Atenciosamente<br />'.
-		$nomeremetente.
-		'<hr>';
+
+		$formularioContato = $app->request->post("metodo");
 		
+		if($formularioContato === "contato"){
+			// contato
+			
+			$nomeremetente = $app->request->post("nome");
+			$telefone = $app->request->post("telefone");
+			$email = $app->request->post("email");
+			$mensagem = $app->request->post("comentarios");
+			$assunto = "Contato ecoestufas";
+			
+			/* Montando a mensagem a ser enviada no corpo do e-mail. */
+			$mensagemHTML = '<P>Nome: '.$nomeremetente.'.<br></P>
+			<P>Email para resposta: '.$email.'.<br></P>
+			<P>Telefone para contato: '.$telefone.'.<br></P>
+			<p>Mensagem: <b><i>'.$mensagem.'</i></b></p>
+			Atenciosamente<br />'.
+			$nomeremetente.
+			'<hr>';
+
+		}else{
+			//orcamento
+			$nomeremetente=$app->request->post("nome");
+			$telefone = $app->request->post("telefone");
+			$email = $app->request->post("email");
+			$assunto = $app->request->post("assunto");
+			$empresa = $app->request->post("empresa");
+			$cidade = $app->request->post("cidade");
+			$finalidade = $app->request->post("finalidade");
+			$largura = $app->request->post("largura");
+			$comprimento = $app->request->post("comprimento");
+			$alturalateral = $app->request->post("alturaLateral");
+
+			/* Montando a mensagem a ser enviada no corpo do e-mail. */
+			$mensagemHTML = '<P>Nome: '.$nomeremetente.'.<br></P>
+			<P>Email para resposta: '.$email.'.<br></P>
+			<P>Telefone para contato: '.$telefone.'.<br></P>
+			<p>Assunto: <b><i>'.$assunto.'</i></b></p>
+			<P>Empresa: '.$empresa.'.<br></P>
+			<P>Cidade: '.$cidade.'.<br></P>
+			<P>Finalidade: '.$finalidade.'.<br></P>
+			<P>Largura: '.$largura.'.<br></P>
+			<P>Comprimento: '.$comprimento.'.<br></P>
+			<P>Altura Lateral: '.$alturaLateral.'.<br></P>
+
+			Atenciosamente<br />'.
+			$nomeremetente.
+			'<hr>';
+
+		}
+
 		/* Montando o cabecalho da mensagem */
 		$headers = "MIME-Version: 1.1" .$quebra_linha;
 		$headers .= "Content-type: text/html; charset=iso-8859-1" .$quebra_linha;
@@ -204,36 +262,8 @@
 			$headers .= "Return-Path: " . $emailsender . $quebra_linha; // Se "nao for Postfix"
 			$retorno = mail($emailremetente, $assunto, $mensagemHTML, $headers );
 		}*/
-		$retorno = true;
-		// se a mensagem foi enviada com sucesso
-		if ($retorno){
-			
-			$response['nome']=$nomeremetente;
-			$response['telefone']=$telefone;
-			$response['email']=$email;
-			$response['comentarios']=$mensagem;
-			$response['erro']=false;
-			
-			
-		}else{
-			$response['erro']=true;
-		}
-      
-        response(200, $response,null);
-
-    });
-	
-	/**FIM DE SECAO DE CONTATO**/
-	
-	
-	
-    function response($status_code, $response,$arrayName){
-        $app = \Slim\Slim::getInstance();
-        $app->status($status_code);
-        $app->contentType("application/json");
-        $formatResponse = isset($arrayName)?json_encode(array($arrayName => $response)):json_encode($response);
-		echo $formatResponse;
-    }
-
+		
+		return $retorno;
+	}
 
     $app->run();
