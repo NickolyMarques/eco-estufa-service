@@ -52,8 +52,11 @@
 					/** retornamos a primeira imagem do diretorio**/
 					$fileSystemIterator = new FilesystemIterator($diretorioroot.$dados["diretorio"]);
 					$entries = array();
-					foreach ($fileSystemIterator as $fileInfo){
+					foreach ($fileSystemIterator as $fileInfo){	
+						list($width, $height)=getimagesize($diretorioroot.$dados["diretorio"]."\\".$fileInfo->getFilename());
 						$galeria['imagemPrincipal'] = $fileInfo->getFilename();
+						$galeria['width'] = $width;
+						$galeria['height'] = $height; 
 						break;
 					}
 					
@@ -78,15 +81,17 @@
 		try{
 			$fileSystemIterator = new FilesystemIterator($diretorioroot.$diretorio);
 			$entries = array();
-			$fileSystemIterator->size;
 			foreach ($fileSystemIterator as $fileInfo){
+				list($width, $height)=getimagesize($diretorioroot.$diretorio."\\".$fileInfo->getFilename());
 				$galeria['erro'] = false;
-				$galeria['imagemPrincipal'] = $fileInfo->getFilename();
+				$galeria['imagem'] = $fileInfo->getFilename();
+				$galeria['width'] = $width;
+				$galeria['height'] = $height; 
 				array_push ( $response,$galeria);
 			}
 		}catch(UnexpectedValueException $e){
 			$galeria['erro'] = true;
-			$galeria['imagemPrincipal'] = '';
+			$galeria['imagem'] = '';
 			array_push ( $response,$galeria);
 		}
 
