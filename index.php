@@ -118,24 +118,33 @@
 	$app->post("/listagaleria", function() use($app,$db,$diretorioroot){
 		$response = array();
 		$galeria = array();
+		
 		 $ue = $db->query(sprintf("SELECT * FROM galeria WHERE ativo='S'"));
 			if($ue->num_rows > 0)
 			{ 
 				while($dados = $ue->fetch_assoc())
 				{
-
+					$tags = array();
 					$galeria['erro'] = false;
 					$galeria['galeria'] = $dados["galeria"];
 					$galeria['descricao'] = $dados["descricao"];
 					$galeria['diretorio'] = $dados["diretorio"];
+					$tags['value'] = $dados["galeria"];
+					$tags['title']= $dados["descricao"];
+					$galeria['tags']=array($tags);
+						//array_push ( $galeria,$tags);
 					/** retornamos a primeira imagem do diretorio**/
 					$fileSystemIterator = new FilesystemIterator($diretorioroot.$dados["diretorio"]);
 					$entries = array();
 					foreach ($fileSystemIterator as $fileInfo){	
+					
 						list($width, $height)=getimagesize($diretorioroot.$dados["diretorio"]."/".$fileInfo->getFilename());
-						$galeria['imagemPrincipal'] = $fileInfo->getFilename();
-						$galeria['width'] = $width;
-						$galeria['height'] = $height; 
+						$galeria['src'] = $diretorioroot.$dados["diretorio"]."/".$fileInfo->getFilename();
+						$galeria['thumbnail'] = $diretorioroot.$dados["diretorio"]."/".$fileInfo->getFilename();
+						$galeria['thumbnailWidth'] = $width;
+						$galeria['thumbnailHeight'] = $height; 
+						$galeria['caption']= $dados["descricao"];
+						
 						break;
 					}
 					
