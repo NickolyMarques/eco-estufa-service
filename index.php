@@ -168,17 +168,22 @@
 		$response = array();
 		$galeria = array();
 		$diretorio  = $app->request->post("diretorio");
+		$descricao  = $app->request->post("descricao");
 		$diretorio = isset($diretorio)?$diretorio:"diretoriovacio";
-					
+		$descricao = isset($descricao)?$$descricao:$diretorio;			
 		try{
 			$fileSystemIterator = new FilesystemIterator($diretorioroot.$diretorio);
 			$entries = array();
 			foreach ($fileSystemIterator as $fileInfo){
 				list($width, $height)=getimagesize($diretorioroot.$diretorio."/".$fileInfo->getFilename());
 				$galeria['erro'] = false;
-				$galeria['imagem'] = $fileInfo->getFilename();
-				$galeria['width'] = $width;
-				$galeria['height'] = $height; 
+				$galeria['src'] = $diretorioroot.$diretorio."/".$fileInfo->getFilename();
+				$galeria['thumbnail'] = $diretorioroot.$diretorio."/".$fileInfo->getFilename();
+				$galeria['thumbnailWidth'] = $width;
+				$galeria['thumbnailHeight'] = $height; 
+				$galeria['caption']= $descricao;
+				
+				
 				array_push ( $response,$galeria);
 			}
 		}catch(UnexpectedValueException $e){
@@ -187,7 +192,7 @@
 			array_push ( $response,$galeria);
 		}
 
-        response(200, $response,"listaImagems");
+        response(200, $response,"images");
 		 
 		 
 	});
